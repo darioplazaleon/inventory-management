@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum
+from sqlalchemy import Column, Integer, String, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 
 from ..db.database import Base
@@ -9,6 +9,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     email = Column(String, unique=True, index=True)
+    full_name = Column(String)
     hashed_password = Column(String)
     role = Column(Enum(Role), default=Role.USER)
 
@@ -22,5 +23,6 @@ class Product(Base):
     description = Column(String)
     price = Column(Integer)
     stock = Column(Integer)
+    user_id = Column(Integer, ForeignKey("users.id"))
 
     owner = relationship("User", back_populates="products")
