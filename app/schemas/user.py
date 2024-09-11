@@ -13,6 +13,7 @@ class UserCreate(UserBase):
 
 class UserInDB(UserBase):
     hashed_password: str
+    role: Role
 
 class User(UserBase):
     id: int
