@@ -5,3 +5,4 @@ python-dotenv~=1.0.1
 passlib~=1.7.4
 PyJWT~=2.9.0
 starlette~=0.38.5
+alembic~=1.13.2

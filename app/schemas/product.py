@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from typing import List
 
-from app.models.categories import Category
+from pydantic import BaseModel
 
 
 class ProductBase(BaseModel):
@@ -8,18 +8,16 @@ class ProductBase(BaseModel):
     description: str | None
     price: float
     stock: int
-    category: Category
+
 
 class ProductCreate(ProductBase):
-    name: str
-    description: str | None
-    price: float
-    stock: int
-    category: Category
+    category_ids: List[int]
+
 
 class Product(ProductBase):
     id: int
     owner_id: int
+    categories: List[int]
 
     class Config:
         orm_mode = True
