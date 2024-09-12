@@ -41,27 +41,6 @@ async def get_products_by_price_range(min_price: float, max_price: float, db: Se
     return db_products
 
 
-@router.get("/products/export-csv")
-async def export_products_to_csv(db: Session = Depends(get_db)):
-    products = db.query(Product).all()
-    if not products:
-        raise HTTPException(status_code=404, detail="No products found")
-
-    buffer = io.StringIO()
-    writer = csv.writer(buffer)
-
-    writer.writerow(["id", "name", "description", "price", "stock", "user_id"])
-
-    for product in products:
-        writer.writerow([product.id, product.name, product.description, product.price, product.stock, product.user_id])
-
-    buffer.seek(0)
-
-    response = StreamingResponse(buffer, media_type="text/csv")
-    response.headers["Content-Disposition"] = "attachment; filename=products.csv"
-    return response
-
-
 @router.get("/products/{product_id}", response_model=ProductBase)
 async def get_product_by_id(product_id: int, db: Session = Depends(get_db)):
     db_product = db.query(Product).filter(product_id == Product.id).first()
