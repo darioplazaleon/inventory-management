@@ -1,11 +1,16 @@
+import csv
+import io
+from http.client import responses
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from starlette.responses import StreamingResponse
 
 from app.core.security.security import get_db, get_current_user, admin_only
 from app.models.models import Product, User, Category
 from app.schemas.product import ProductCreate, ProductBase
+from app.utils.history import log_product_operation
 
 router = APIRouter(tags=["products"])
 
@@ -19,12 +24,42 @@ async def create_product(product: ProductCreate, db: Session = Depends(get_db),
     db.add(new_product)
     db.commit()
     db.refresh(new_product)
+    log_product_operation(db, new_product.id, "create", current_user.id)
     return new_product
 
 
 @router.get("/products", response_model=List[ProductBase])
 async def get_all_products(db: Session = Depends(get_db)):
     return db.query(Product).all()
+
+
+@router.get("/products/price-range", response_model=List[ProductBase])
+async def get_products_by_price_range(min_price: float, max_price: float, db: Session = Depends(get_db)):
+    db_products = db.query(Product).filter(Product.price >= min_price, Product.price <= max_price).all()
+    if db_products is None:
+        raise HTTPException(status_code=404, detail=f"Products with price range {min_price} - {max_price} not found")
+    return db_products
+
+
+@router.get("/products/export-csv")
+async def export_products_to_csv(db: Session = Depends(get_db)):
+    products = db.query(Product).all()
+    if not products:
+        raise HTTPException(status_code=404, detail="No products found")
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+
+    writer.writerow(["id", "name", "description", "price", "stock", "user_id"])
+
+    for product in products:
+        writer.writerow([product.id, product.name, product.description, product.price, product.stock, product.user_id])
+
+    buffer.seek(0)
+
+    response = StreamingResponse(buffer, media_type="text/csv")
+    response.headers["Content-Disposition"] = "attachment; filename=products.csv"
+    return response
 
 
 @router.get("/products/{product_id}", response_model=ProductBase)
@@ -58,6 +93,7 @@ async def delete_product(product_id: int, db: Session = Depends(get_db), current
         raise HTTPException(status_code=404, detail=f"Product with id {product_id} not found")
     db.delete(product_to_delete)
     db.commit()
+    log_product_operation(db, product_id, "delete", current_user.id)
     return {"message": f"Product with id {product_id} deleted successfully"}
 
 

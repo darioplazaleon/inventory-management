@@ -1,8 +1,12 @@
+from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from starlette.config import environ
 
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:4102002@localhost:5432/inventory-management"
+load_dotenv()
+
+SQLALCHEMY_DATABASE_URL = environ.get("DATABASE_URL")
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 

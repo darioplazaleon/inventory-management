@@ -1,4 +1,6 @@
-from sqlalchemy import Column, Integer, String, Enum, ForeignKey, Float, Table
+from datetime import datetime, timezone
+
+from sqlalchemy import Column, Integer, String, Enum, ForeignKey, Float, Table, DateTime
 from sqlalchemy.orm import relationship
 
 from app.db.database import Base
@@ -21,6 +23,7 @@ class User(Base):
     hashed_password = Column(String)
     role = Column(Enum(Role), default=Role.USER)
 
+    history = relationship("ProductHistory", back_populates="user")
     products = relationship("Product", back_populates="owner")
 
 
@@ -34,6 +37,7 @@ class Product(Base):
     stock = Column(Integer)
     user_id = Column(Integer, ForeignKey("users.id"))
 
+    history = relationship("ProductHistory", back_populates="product")
     categories = relationship("Category", secondary=product_category, back_populates="products")
     owner = relationship("User", back_populates="products")
 
@@ -46,3 +50,16 @@ class Category(Base):
     description = Column(String)
 
     products = relationship("Product", secondary=product_category, back_populates="categories")
+
+
+class ProductHistory(Base):
+    __tablename__ = "product_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    product_id = Column(Integer, ForeignKey("products.id"))
+    operation = Column(String, index=True)
+    timestamp = Column(DateTime, default=datetime.now(timezone.utc))
+    user_id = Column(Integer, ForeignKey("users.id"))
+
+    product = relationship("Product", back_populates="history")
+    user = relationship("User", back_populates="history")
