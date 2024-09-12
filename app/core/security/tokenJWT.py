@@ -11,13 +11,13 @@ ALGORITHM = environ.get("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
-def create_access_token(data: dict, role: str, expires_delta: timedelta | None = None):
+def create_access_token(data: dict, user_id: int, role: str, expires_delta: timedelta | None = None):
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update({"exp": expire, "role": role})
+    to_encode.update({"exp": expire, "user_id":user_id, "role": role})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 

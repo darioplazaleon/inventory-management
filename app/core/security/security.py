@@ -15,6 +15,7 @@ from app.schemas.user import UserBase, UserInDB
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
+
 def get_db():
     db = SessionLocal()
     try:
@@ -22,13 +23,17 @@ def get_db():
     finally:
         db.close()
 
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 def get_password_hash(password):
     return pwd_context.hash(password)
 
+
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
+
 
 def get_user(db: Session, email: str) -> UserInDB | None:
     user = db.query(User).filter(email == User.email).first()
@@ -36,13 +41,15 @@ def get_user(db: Session, email: str) -> UserInDB | None:
         return UserInDB(**user.__dict__)
     return None
 
-def authenticate_user(db: Session, email:str, password:str):
+
+def authenticate_user(db: Session, email: str, password: str):
     user = get_user(db, email)
     if not user:
         return False
     if not verify_password(password, user.hashed_password):
         return False
     return user
+
 
 async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -59,10 +66,14 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)], db: Se
         token_data = TokenData(email=email)
     except InvalidTokenError:
         raise credentials_exception
-    user = get_user(db ,email=token_data.email)
+    user = get_user(db, email=token_data.email)
     if user is None:
         raise credentials_exception
     return user
 
 
-
+async def admin_only(user: User = Depends(get_current_user)):
+    print(user)
+    if user.role.value != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You don't have enough permissions")
+    return user
