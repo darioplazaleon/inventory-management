@@ -1,13 +1,9 @@
-import csv
-import io
-from http.client import responses
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from starlette.responses import StreamingResponse
 
-from app.core.security.security import get_db, get_current_user, admin_only
+from app.core.security.security import get_db, admin_only
 from app.models.models import Product, User, Category
 from app.schemas.product import ProductCreate, ProductBase
 from app.utils.history import log_product_operation
