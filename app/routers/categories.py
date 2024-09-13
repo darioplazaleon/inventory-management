@@ -3,7 +3,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.core.security.security import get_db
+from app.core.security.security import get_db, admin_only
 from app.models.models import Category
 from app.schemas.category import CategoryBase
 
@@ -23,7 +23,7 @@ async def get_category_by_id(category_id: int, db: Session = Depends(get_db)):
     return db_category
 
 
-@router.post("/categories/create", response_model=CategoryBase)
+@router.post("/categories/create", response_model=CategoryBase, dependencies=[Depends(admin_only)])
 async def create_category(category: CategoryBase, db: Session = Depends(get_db)):
     new_category = Category(name=category.name, description=category.description)
     db.add(new_category)
@@ -32,7 +32,7 @@ async def create_category(category: CategoryBase, db: Session = Depends(get_db))
     return new_category
 
 
-@router.put("/categories/{category_id}", response_model=CategoryBase)
+@router.put("/categories/{category_id}", response_model=CategoryBase, dependencies=[Depends(admin_only)])
 async def update_category(category_id: int, category: CategoryBase, db: Session = Depends(get_db)):
     category_to_update = db.query(Category).filter(category_id == Category.id).first()
     if category_to_update is None:
@@ -44,7 +44,7 @@ async def update_category(category_id: int, category: CategoryBase, db: Session 
     return category_to_update
 
 
-@router.delete("/categories/{category_id}")
+@router.delete("/categories/{category_id}", dependencies=[Depends(admin_only)])
 async def delete_category(category_id: int, db: Session = Depends(get_db)):
     category_to_delete = db.query(Category).filter(category_id == Category.id).first()
     if category_to_delete is None:
