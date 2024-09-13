@@ -7,9 +7,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from starlette import status
 
-from app.core.security.security import get_db, get_password_hash, authenticate_user
+from app.core.security.security import get_db, get_password_hash, authenticate_user, admin_only
 from app.core.security.tokenJWT import ACCESS_TOKEN_EXPIRE_MINUTES, create_access_token
 from app.models.models import User
+from app.models.roles import Role
 from app.schemas.token import Token
 from app.schemas.user import UserCreate, UserBase
 
@@ -45,3 +46,15 @@ async def login_for_access_token(
     access_token = create_access_token(data={"sub": user.email}, user_id=user.id, role=user.role.name, expires_delta=access_token_expires)
     return Token(access_token=access_token, token_type="bearer")
 
+@router.post("/change-rol" ,dependencies=[Depends(admin_only)])
+async def change_user_rol(user_id: int ,db: Session = Depends(get_db)):
+    user = db.query(User).filter(user_id == User.id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user.role == Role.USER:
+        user.role = Role.ADMIN
+    else:
+        user.role = Role.USER
+    db.commit()
+    db.refresh(user)
+    return user
